@@ -154,6 +154,7 @@
 
                 <div id="stockitem">
                   <div class="panel-body">
+				
                     <div class="row form-row">
                       <div class="form-group col-md-6">
                         <label class="panel-body-text">Stock:</label>
@@ -205,11 +206,116 @@
     </div>
 
   </main>
-  <!-- Log on to codeastro.com for more projects -->
-  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-  <script src="../bootstrap/jquery-3.3.1.slim.min.js"></script>
-  <script src="../bootstrap/popper.min.js"></script>
-  <script src="../bootstrap/bootstrap.min.js"></script>
+  <script type="text/javascript" src="{% static 'js/jquery-3.2.1.slim.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/dialogbox.js' %}"></script>
+  <script type="text/javascript">
+    // Creates custom alert object
+    var custom_alert = new custom_alert();
+
+    // Stores the total number of item forms
+    var total = 1;
+
+    // Updates element index for dynamically added form rows
+    function updateElementIndex(el, prefix, ndx) {
+        var id_regex = new RegExp('(' + prefix + '-\\d+)');
+        var replacement = prefix + '-' + ndx;
+        
+        if ($(el).attr("for")) {
+            $(el).attr("for", $(el).attr("for").replace(id_regex, replacement));
+        }
+        if (el.id) {
+            el.id = el.id.replace(id_regex, replacement);
+        }
+        if (el.name) {
+            el.name = el.name.replace(id_regex, replacement);
+        }
+    }
+
+    // Clones a form row to add a new one
+    function cloneMore(selector, prefix) {
+        var newElement = $(selector).clone(true);
+
+        // Update input names and ids for the new element
+        newElement.find(':input:not([type=button]):not([type=submit]):not([type=reset])').each(function() {
+            var name = $(this).attr('name');
+            if (name) {
+                name = name.replace('-' + (total - 1) + '-', '-' + total + '-');
+                var id = 'id_' + name;
+                $(this).attr({'name': name, 'id': id}).val('').removeAttr('checked');
+            }
+        });
+
+        // Update labels for the new element
+        newElement.find('label').each(function() {
+            var forValue = $(this).attr('for');
+            if (forValue) {
+                forValue = forValue.replace('-' + (total - 1) + '-', '-' + total + '-');
+                $(this).attr({'for': forValue});
+            }
+        });
+
+        total++;
+        $('#id_' + prefix + '-TOTAL_FORMS').val(total);
+        $(selector).after(newElement);
+
+        return false;
+    }
+
+    // Deletes a form row
+    function deleteForm(prefix, btn) {
+        if (total > 1) {
+            btn.closest('.form-row').remove();
+
+            var forms = $('.form-row');
+            $('#id_' + prefix + '-TOTAL_FORMS').val(forms.length);
+
+            // Update indices for remaining form rows
+            for (var i = 0, formCount = forms.length; i < formCount; i++) {
+                $(forms.get(i)).find(':input').each(function() {
+                    updateElementIndex(this, prefix, i);
+                });
+            }
+
+            total--;
+        } else {
+            custom_alert.render("Field cannot be deleted");
+        }
+
+        return false;
+    }
+
+    // Event listener to add a new form row
+    $(document).on('click', '.add-form-row', function(e) {
+        e.preventDefault();
+        cloneMore('.form-row:last', 'form');
+        return false;
+    });
+
+    // Event listener to remove a form row
+    $(document).on('click', '.remove-form-row', function(e) {
+        e.preventDefault();
+        deleteForm('form', $(this));
+        return false;
+    });
+
+    // Updates the total price by multiplying 'price per item' and 'quantity'
+    $(document).on('change', '.setprice', function(e) {
+        e.preventDefault();
+
+        // Get the values
+        var element = $(this);
+        var quantity = element.parents('.form-row').find('.quantity').val();
+        var perprice = element.parents('.form-row').find('.price').val();
+
+        // Calculate the total
+        var tprice = quantity * perprice;
+
+        // Set the calculated total to the field
+        element.parents('.form-row').find('.totalprice').val(tprice);
+
+        return false;
+    });
+  </script>
 
 </body>
 
